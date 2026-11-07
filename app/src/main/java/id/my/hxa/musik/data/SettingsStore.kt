@@ -22,7 +22,7 @@ object SettingsStore {
     val unduhWifi = MutableStateFlow(false)
 
     // lirik
-    val sumberLirik = MutableStateFlow(0) // 0 otomatis, 1 lrclib saja, 2 termai saja
+    val sumberLirik = MutableStateFlow(0) // 0 otomatis, 1 lrclib saja
     val alihOtomatis = MutableStateFlow(false)
     val ukuranLirik = MutableStateFlow(1) // 0 kecil, 1 sedang, 2 besar
 

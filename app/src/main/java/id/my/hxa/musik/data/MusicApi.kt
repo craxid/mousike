@@ -492,11 +492,10 @@ object MusicApi {
         emptyList()
     }
 
-    // ----- lirik: LRCLIB utama, cadangan pencarian LRCLIB, terakhir termai.
+    // ----- lirik: LRCLIB utama, cadangan pencarian LRCLIB.
     // Logikanya port dari versi web (cleanTitle, splitArtistTitle, parseLRC).
 
     private const val LRCLIB_UA = "Musik/1.0 (https://hxa.my.id/musik/)"
-    private val TERMAI_LYRICS_KEY get() = Kunci.TERMAI_KEY
     private val lyricsCache = HashMap<String, Lyrics?>()
 
     private fun cleanTitle(t: String): String {
@@ -699,19 +698,7 @@ object MusicApi {
             }
             tmp.forEach { tambah(it.lirik, it.durasiSec) }
         } catch (e: Exception) {
-            // lanjut ke cadangan terakhir
-        }
-        // termai jadi satu kandidat penutup
-        try {
-            val q = URLEncoder.encode(kueri, "UTF-8")
-            val d = JSONObject(httpGetText("https://api.termai.cc/api/search/lyrics?query=$q&key=$TERMAI_LYRICS_KEY", 15_000))
-            val lyr = d.optJSONObject("data")?.optString("lyrics").orEmpty()
-            if (d.optBoolean("status") && lyr.isNotEmpty()) {
-                val lines = parseLRC(lyr)
-                tambah(Lyrics(lines.ifEmpty { null }, if (lines.isEmpty()) lyr else null, "TERMAI", j, a), durasiTrack)
-            }
-        } catch (e: Exception) {
-            // semua jalur habis
+            // pencarian bebas gagal, pakai kandidat yang sudah ada
         }
         out.take(10)
     }
@@ -744,10 +731,6 @@ object MusicApi {
         if (artists.isEmpty()) artists.add("YouTube")
         val artist = artists[0]
 
-        // setelan sumber lirik: 1 = LRCLIB saja, 2 = termai saja
-        val sumber = SettingsStore.sumberLirik.value
-
-        if (sumber != 2) {
         // jalur utama: /api/get per kandidat artis
         for (a in artists) {
             try {
@@ -779,22 +762,7 @@ object MusicApi {
             }
             if (best != null) return best
         } catch (e: Exception) {
-            // lanjut ke cadangan terakhir
-        }
-        }
-        // cadangan 2: termai, jagonya lagu Indonesia (sumber yang sama dengan versi web)
-        if (sumber != 1) {
-        try {
-            val q = URLEncoder.encode("$artist $titleOnly", "UTF-8")
-            val d = JSONObject(httpGetText("https://api.termai.cc/api/search/lyrics?query=$q&key=$TERMAI_LYRICS_KEY", 15_000))
-            val lyr = d.optJSONObject("data")?.optString("lyrics").orEmpty()
-            if (d.optBoolean("status") && lyr.isNotEmpty()) {
-                val lines = parseLRC(lyr)
-                return Lyrics(lines.ifEmpty { null }, if (lines.isEmpty()) lyr else null, "TERMAI", titleOnly, artist)
-            }
-        } catch (e: Exception) {
             // semua jalur habis
-        }
         }
         return null
     }

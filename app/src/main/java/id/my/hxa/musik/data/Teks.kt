@@ -130,9 +130,8 @@ object Teks {
     val unduhHanyaWifi get() = p("Unduh hanya saat Wi-Fi", "Download only on Wi-Fi")
     val lirik get() = p("Lirik", "Lyrics")
     val sumberLirik get() = p("Sumber lirik", "Lyrics source")
-    val otomatisLrclibTermai get() = p("Otomatis (LRCLIB, lalu termai)", "Automatic (LRCLIB, then termai)")
+    val otomatisLrclib get() = p("Otomatis (LRCLIB)", "Automatic (LRCLIB)")
     val lrclibSaja get() = p("LRCLIB saja", "LRCLIB only")
-    val termaiSaja get() = p("termai saja", "termai only")
     val alihAksaraOtomatis get() = p("Alih aksara otomatis", "Automatic transliteration")
     val alihAksaraSub get() = p(
         "Lagu beraksara asing langsung ditampilkan dalam romaji atau latin.",

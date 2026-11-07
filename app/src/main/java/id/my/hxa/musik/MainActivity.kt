@@ -1848,7 +1848,7 @@ fun HomeScreen() {
                     JudulBagianSetelan(Teks.lirik)
                     DropdownSetelan(
                         Teks.sumberLirik,
-                        listOf(0 to Teks.otomatisLrclibTermai, 1 to Teks.lrclibSaja, 2 to Teks.termaiSaja),
+                        listOf(0 to Teks.otomatisLrclib, 1 to Teks.lrclibSaja),
                         sumberLirik
                     ) { SettingsStore.setSumberLirik(it) }
                     SakelarSetelan(

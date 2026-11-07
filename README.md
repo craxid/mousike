@@ -24,7 +24,7 @@ Kebutuhan: JDK 17 dan Gradle 8.9 (atau Android Studio versi terbaru). Proyek ini
 Sebelum membangun, siapkan tiga hal berikut yang memang tidak disertakan di repo ini:
 
 1. Berkas `app/google-services.json` dari proyek Firebase milikmu sendiri. Nama paket aplikasinya adalah `id.my.hxa.musik`.
-2. Nilai layanan di `app/src/main/java/id/my/hxa/musik/data/Kunci.kt`. Berkas itu berisi contoh untuk alamat backend resa, kunci API termai.cc, dan proyek Supabase; ganti dengan milikmu.
+2. Nilai layanan di `app/src/main/java/id/my/hxa/musik/data/Kunci.kt`. Berkas itu berisi contoh untuk alamat backend resa dan proyek Supabase; ganti dengan milikmu.
 3. Untuk build release, salin `keystore-final.properties.example` menjadi `keystore-final.properties` dan isi dengan keystore milikmu. Build debug berjalan tanpa berkas ini.
 
 Saluran pembaruan di dalam aplikasi membaca berkas JSON dari Google Drive. Tautan di `UpdateChecker.kt` menunjuk ke saluran pembaruan resmi Mousike; ganti dengan berkas milikmu bila kamu menerbitkan varian sendiri.
