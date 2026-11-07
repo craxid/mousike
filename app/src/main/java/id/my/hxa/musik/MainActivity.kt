@@ -216,15 +216,10 @@ import id.my.hxa.musik.data.LocalTrack
 import id.my.hxa.musik.data.LirikKandidat
 import id.my.hxa.musik.data.Lyrics
 import id.my.hxa.musik.data.MusicApi
-import id.my.hxa.musik.data.QrisDonasi
 import id.my.hxa.musik.data.Teks
 import id.my.hxa.musik.data.Playlist
 import id.my.hxa.musik.data.SettingsStore
-import id.my.hxa.musik.data.SupaClient
-import id.my.hxa.musik.data.SyncManager
 import id.my.hxa.musik.data.Track
-import id.my.hxa.musik.data.UpdateChecker
-import id.my.hxa.musik.data.UpdateInfo
 import id.my.hxa.musik.player.PlayerManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -264,12 +259,10 @@ class MainActivity : ComponentActivity() {
         LibraryStore.init(applicationContext)
         SettingsStore.init(applicationContext)
         AudioOutput.init(applicationContext)
-        SupaClient.init(applicationContext)
-        SyncManager.init(applicationContext)
         DownloadStore.init(applicationContext)
         ThemeStore.init(applicationContext)
         // izin notifikasi (Android 13+): diminta sekali saja biar
-        // notif pengumuman owner bisa muncul; status dimintanya
+        // notifikasi kontrol pemutaran bisa muncul; status dimintanya
         // disimpan supaya nggak ditanya berulang-ulang tiap buka
         if (Build.VERSION.SDK_INT >= 33 &&
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
@@ -333,15 +326,25 @@ fun fmtDur(totalSec: Int): String {
     return "$m:${s.toString().padStart(2, '0')}"
 }
 
-private fun fmtSize(bytes: Long): String =
-    if (bytes > 0) String.format(localeAngka(), "%.1f MB", bytes / 1_048_576.0) else "-"
+private fun namaVersiTerpasang(context: Context): String =
+    try { context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "" } catch (e: Exception) { "" }
+
+private fun kodeVersiTerpasang(context: Context): Int {
+    val pi = context.packageManager.getPackageInfo(context.packageName, 0)
+    return if (android.os.Build.VERSION.SDK_INT >= 28) {
+        pi.longVersionCode.toInt()
+    } else {
+        @Suppress("DEPRECATION")
+        pi.versionCode
+    }
+}
 
 // format angka ikut bahasa aplikasi, bukan bahasa HP:
 // Inggris pakai titik (44.1), Indonesia pakai koma (44,1)
 private fun localeAngka(): java.util.Locale =
     if (Teks.inggris) java.util.Locale.US else java.util.Locale("id", "ID")
 
-// latar kotak-kotak kayak web hxa.my.id: garis 1px tiap 42dp,
+// latar kotak-kotak: garis 1px tiap 42dp,
 // putih samar (5,5%) di tema gelap, slate samar di tema terang.
 // Digambar di belakang isi, di atas warna latar polosnya.
 @Composable
@@ -480,10 +483,6 @@ private fun SakelarSetelan(label: String, keterangan: String?, nyala: Boolean, o
     }
 }
 
-// ----- dialog donasi: QRIS dinamis dibuat lokal di HP -----
-
-private fun formatRp(nilai: Long): String =
-    "Rp" + nilai.toString().reversed().chunked(3).joinToString(".").reversed()
 
 // Bungkus dialog bersama buat semua dialog aplikasi.
 // AlertDialog bawaan Material jarak internalnya longgar
@@ -580,154 +579,6 @@ private fun BarisPilihanFolder(
     }
 }
 
-@Composable
-private fun DonasiDialog(onDismiss: () -> Unit) {
-    val chipPilihan = listOf(5_000L, 10_000L, 15_000L, 20_000L, 50_000L, 100_000L)
-    var chipTerpilih by remember { mutableStateOf<Long?>(null) }
-    var isian by remember { mutableStateOf("") }
-    var qrBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var nominalAktif by remember { mutableStateOf<Long?>(null) }
-    val isianAngka = isian.toLongOrNull()
-    // isian bebas didahulukan; kalau kosong baru pakai chip
-    val nominalPilihan = if (isian.isNotEmpty()) isianAngka else chipTerpilih
-    val isianKurang = isian.isNotEmpty() && (isianAngka == null || isianAngka < QrisDonasi.NOMINAL_MIN)
-    DialogMusik(
-        onDismissRequest = onDismiss,
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.CardGiftcard, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Text(Teks.donasi, modifier = Modifier.padding(start = 10.dp))
-            }
-        },
-        text = {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                // area QR: penahan kosong dulu, QR beneran sesudah dibuat
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    val bmp = qrBitmap
-                    if (bmp != null) {
-                        Image(
-                            bitmap = bmp.asImageBitmap(),
-                            contentDescription = Teks.qrisDonasiDesc,
-                            modifier = Modifier.size(180.dp)
-                        )
-                    } else {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                            modifier = Modifier
-                                .size(180.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                                .padding(20.dp)
-                        ) {
-                            Icon(
-                                Icons.Filled.QrCode2,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(56.dp)
-                            )
-                            Text(
-                                Teks.qrisBelumDibuat,
-                                fontSize = 13.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(top = 10.dp)
-                            )
-                        }
-                    }
-                }
-                if (nominalAktif != null) {
-                    Text(
-                        "${QrisDonasi.NAMA_PENERIMA} • ${formatRp(nominalAktif!!)}",
-                        fontSize = 14.5.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-                    )
-                    Text(
-                        Teks.nominalOtomatis,
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().padding(top = 2.dp)
-                    )
-                }
-                Text(
-                    Teks.pilihNominal,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
-                )
-                // dua chip per baris biar label nominal muat
-                // satu baris penuh (tiga per baris bikin teksnya
-                // patah jadi dua baris kayak di v1.0.7)
-                chipPilihan.chunked(2).forEach { baris ->
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
-                    ) {
-                        baris.forEach { nilai ->
-                            FilterChip(
-                                selected = isian.isEmpty() && chipTerpilih == nilai,
-                                onClick = { chipTerpilih = nilai; isian = "" },
-                                label = { Text(formatRp(nilai), maxLines = 1, softWrap = false) },
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        // baris terakhir yang ganjil diimbangi ruang kosong
-                        if (baris.size == 1) {
-                            Spacer(Modifier.weight(1f))
-                        }
-                    }
-                }
-                OutlinedTextField(
-                    value = isian,
-                    onValueChange = { isian = it.filter { c -> c.isDigit() }.take(9) },
-                    label = { Text(Teks.nominalLain) },
-                    prefix = { Text("Rp ") },
-                    trailingIcon = {
-                        if (isian.isNotEmpty()) {
-                            IconButton(onClick = { isian = "" }) {
-                                Icon(Icons.Filled.Close, contentDescription = null, modifier = Modifier.size(20.dp))
-                            }
-                        }
-                    },
-                    singleLine = true,
-                    isError = isianKurang,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Text(
-                    Teks.qrDibuatDiPerangkat,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 6.dp)
-                )
-            }
-        },
-        // tombol bikin QRIS tinggal di baris tombol dialog,
-        // selalu kelihatan utuh, gak lagi di ujung guliran
-        confirmButton = {
-            Button(
-                onClick = {
-                    val n = nominalPilihan ?: return@Button
-                    nominalAktif = n
-                    qrBitmap = QrisDonasi.buatBitmap(QrisDonasi.buatPayloadDinamis(n))
-                },
-                enabled = nominalPilihan != null && nominalPilihan >= QrisDonasi.NOMINAL_MIN
-            ) {
-                Text(if (qrBitmap == null) Teks.buatQris else Teks.buatUlangQris)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(Teks.tutup) }
-        }
-    )
-}
-
 // Catatan rilis versi yang sedang dibangun. Tampil sebagai
 // popup SEKALI tiap ganti versi (pengganti spanduk menetap
 // di bawah beranda), jadi isinya diganti tiap rilis.
@@ -752,8 +603,6 @@ fun HomeScreen() {
     var confirmAction by remember { mutableStateOf<Pair<String, () -> Unit>?>(null) }
     var openPlaylistId by remember { mutableStateOf<String?>(null) }
     var showSettings by remember { mutableStateOf(false) }
-    var showDonasi by remember { mutableStateOf(false) }
-    var showFeedback by remember { mutableStateOf(false) }
     // mode beranda: online atau lokal (berkas musik di perangkat)
     var modeLokal by remember { mutableStateOf(false) }
 
@@ -813,7 +662,6 @@ fun HomeScreen() {
             scope.launch { LocalLibrary.pakaiFolder(context, uri) }
         }
     }
-    var showAccount by remember { mutableStateOf(false) }
     var downloadTarget by remember { mutableStateOf<Track?>(null) }
     var dlName by remember { mutableStateOf("") }
     var dlChoice by remember { mutableStateOf<DlDestination>(DlDestination.Downloads) }
@@ -826,10 +674,8 @@ fun HomeScreen() {
     // otomatis, 3 tidak ketemu, 4 dari berkas, 5 dari pencarian
     var dlLirikStatus by remember { mutableIntStateOf(0) }
     var dlCariLirik by remember { mutableStateOf(false) }
-    var updateInfo by remember { mutableStateOf<UpdateInfo?>(null) }
-    var updateDlId by remember { mutableStateOf(-1L) }
     var recommendations by remember { mutableStateOf<List<Track>>(emptyList()) }
-    val installedName = remember { UpdateChecker.installedVersionName(context) }
+    val installedName = remember { namaVersiTerpasang(context) }
     // state buat efek blur mini player ngambang: kolom utama ini
     // sumbernya, kartu mini player yang nge-blur tampilan di belakangnya
     val hazeState = remember { HazeState() }
@@ -922,7 +768,7 @@ fun HomeScreen() {
     }
 
     // ----- catatan rilis: popup sekali lihat tiap versi -----
-    val kodeTerpasang = remember { UpdateChecker.installedVersionCode(context) }
+    val kodeTerpasang = remember { kodeVersiTerpasang(context) }
     val prefsUmum = remember { context.getSharedPreferences("musikbeta", Context.MODE_PRIVATE) }
     var tampilCatatan by remember { mutableStateOf(false) }
     var tampilIzinNotif by remember { mutableStateOf(false) }
@@ -997,83 +843,10 @@ fun HomeScreen() {
         )
     }
 
-    // cek pembaruan sekali pas aplikasi dibuka, kayak aplikasi sebelumnya:
-    // diam saja kalau tidak ada yang lebih baru atau lagi offline.
-    // Bisa dimatikan dari Pengaturan.
+    // setelan lanjutkan sesi: muat lagu terakhir dalam keadaan jeda
     LaunchedEffect(Unit) {
-        if (SettingsStore.cekUpdate.value) {
-            val info = UpdateChecker.check()
-            if (info != null && info.versionCode > UpdateChecker.installedVersionCode(context)) {
-                updateInfo = info
-            }
-        }
-        // setelan lanjutkan sesi: muat lagu terakhir dalam keadaan jeda
         if (SettingsStore.lanjutSesi.value) {
             PlayerManager.pulihkanSesi()
-        }
-    }
-
-    // unduhan pembaruan selesai -> langsung buka installernya.
-    // RECEIVER_EXPORTED wajib hukumnya di sini: siaran selesai
-    // unduh itu dikirim aplikasi Download bawaan sistem, bukan
-    // OS-nya langsung, jadi NOT_EXPORTED bikin siarannya tidak
-    // pernah sampai di targetSdk 35 (bug yang dilaporkan user
-    // 8 Nov). Tetap aman karena yang ditanggapi cuma id unduhan
-    // yang disimpan sendiri, dan id-nya disimpan persisten biar
-    // tidak hilang pas Activity dibuat ulang atau proses mati.
-    DisposableEffect(Unit) {
-        val receiver = object : BroadcastReceiver() {
-            override fun onReceive(ctx: Context, intent: Intent) {
-                val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
-                val tersimpan = prefsUmum.getLong("update_dl_id", -1L)
-                if (id != -1L && id == tersimpan) {
-                    prefsUmum.edit().remove("update_dl_id").apply()
-                    updateDlId = -1L
-                    if (UpdateChecker.canInstall(context)) {
-                        UpdateChecker.installDownloaded(context, id)
-                    } else {
-                        Toast.makeText(context, Teks.unduhanSelesaiInstaller, Toast.LENGTH_LONG).show()
-                        UpdateChecker.openInstallSettings(context)
-                    }
-                }
-            }
-        }
-        ContextCompat.registerReceiver(
-            context,
-            receiver,
-            IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
-            ContextCompat.RECEIVER_EXPORTED
-        )
-        onDispose { context.unregisterReceiver(receiver) }
-    }
-
-    // unduhan pembaruan yang selesainya pas aplikasi lagi
-    // tertutup: tawarkan pemasangannya pas aplikasi dibuka lagi
-    LaunchedEffect(Unit) {
-        val idTersimpan = prefsUmum.getLong("update_dl_id", -1L)
-        if (idTersimpan == -1L) return@LaunchedEffect
-        val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        var status = -1
-        try {
-            dm.query(DownloadManager.Query().setFilterById(idTersimpan))?.use { c ->
-                if (c.moveToFirst()) {
-                    status = c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
-                }
-            }
-        } catch (e: Exception) {
-            status = -1
-        }
-        when (status) {
-            DownloadManager.STATUS_SUCCESSFUL -> {
-                prefsUmum.edit().remove("update_dl_id").apply()
-                if (UpdateChecker.canInstall(context)) {
-                    UpdateChecker.installDownloaded(context, idTersimpan)
-                } else {
-                    Toast.makeText(context, Teks.unduhanSelesaiInstaller, Toast.LENGTH_LONG).show()
-                    UpdateChecker.openInstallSettings(context)
-                }
-            }
-            DownloadManager.STATUS_FAILED -> prefsUmum.edit().remove("update_dl_id").apply()
         }
     }
 
@@ -1266,45 +1039,6 @@ fun HomeScreen() {
                         .padding(6.dp)
                         .size(20.dp)
                 )
-                // sesudah masuk, ikon akun mini jadi foto profil Google
-                // milik user sendiri (gambar yang sama kayak di dialog
-                // Akun); logo G cuma cadangan kalau foto profilnya kosong
-                val sesiHeader by SupaClient.session.collectAsState()
-                val sHead = sesiHeader
-                if (sHead != null && sHead.avatar.isNotEmpty()) {
-                    AsyncImage(
-                        model = sHead.avatar,
-                        contentDescription = Teks.akun,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .clickable { showAccount = true }
-                            .padding(4.dp)
-                            .size(24.dp)
-                            .clip(CircleShape)
-                    )
-                } else if (sHead != null) {
-                    Image(
-                        painter = painterResource(R.drawable.ic_google_g),
-                        contentDescription = Teks.akun,
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .clickable { showAccount = true }
-                            .padding(6.dp)
-                            .size(20.dp)
-                    )
-                } else {
-                    Icon(
-                        Icons.Filled.AccountCircle,
-                        contentDescription = Teks.akun,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .clickable { showAccount = true }
-                            .padding(6.dp)
-                            .size(20.dp)
-                    )
-                }
                 Icon(
                     Icons.Filled.Settings,
                     contentDescription = Teks.pengaturan,
@@ -1750,10 +1484,6 @@ fun HomeScreen() {
     }
     }
 
-    // ----- dialog: donasi QRIS -----
-    if (showDonasi) {
-        DonasiDialog(onDismiss = { showDonasi = false })
-    }
 
     // ----- dialog: pengaturan -----
     if (showSettings) {
@@ -1763,12 +1493,8 @@ fun HomeScreen() {
         val kualitasUnduh by SettingsStore.formatUnduh.collectAsState()
         val unduhWifi by SettingsStore.unduhWifi.collectAsState()
         val sumberLirik by SettingsStore.sumberLirik.collectAsState()
-        val alihOtomatis by SettingsStore.alihOtomatis.collectAsState()
         val ukuranLirik by SettingsStore.ukuranLirik.collectAsState()
-        val sinkronWifi by SettingsStore.sinkronWifi.collectAsState()
-        val cekUpdate by SettingsStore.cekUpdate.collectAsState()
         val bahasa by SettingsStore.bahasa.collectAsState()
-        var memeriksaUpdate by remember { mutableStateOf(false) }
         val statusLokal by MusicApi.statusLokal.collectAsState()
         val loaderGambar = remember { context.imageLoader }
         var ukuranCache by remember { mutableStateOf(-1L) }
@@ -1851,23 +1577,13 @@ fun HomeScreen() {
                         listOf(0 to Teks.otomatisLrclib, 1 to Teks.lrclibSaja),
                         sumberLirik
                     ) { SettingsStore.setSumberLirik(it) }
-                    SakelarSetelan(
-                        Teks.alihAksaraOtomatis,
-                        Teks.alihAksaraSub,
-                        alihOtomatis
-                    ) { SettingsStore.setAlihOtomatis(it) }
                     DropdownSetelan(
                         Teks.ukuranTeksLirik,
                         listOf(0 to Teks.kecil, 1 to Teks.sedang, 2 to Teks.besar),
                         ukuranLirik
                     ) { SettingsStore.setUkuranLirik(it) }
 
-                    JudulBagianSetelan(Teks.sinkronDanData)
-                    SakelarSetelan(
-                        Teks.sinkronHanyaWifi,
-                        Teks.sinkronWifiSub,
-                        sinkronWifi
-                    ) { SettingsStore.setSinkronWifi(it) }
+                    JudulBagianSetelan(Teks.data)
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.padding(top = 8.dp)
@@ -1915,58 +1631,6 @@ fun HomeScreen() {
                         bahasa,
                         ikon = mapOf(0 to R.drawable.ic_bendera_id, 1 to R.drawable.ic_bendera_gb)
                     ) { SettingsStore.setBahasa(it) }
-                    SakelarSetelan(
-                        Teks.cekPembaruanOtomatis,
-                        Teks.cekPembaruanSub,
-                        cekUpdate
-                    ) { SettingsStore.setCekUpdate(it) }
-                    OutlinedButton(
-                        onClick = {
-                            memeriksaUpdate = true
-                            setScope.launch {
-                                val info = try { UpdateChecker.check() } catch (e: Exception) { null }
-                                memeriksaUpdate = false
-                                when {
-                                    info == null ->
-                                        Toast.makeText(context, Teks.gagalMemeriksa, Toast.LENGTH_SHORT).show()
-                                    info.versionCode > UpdateChecker.installedVersionCode(context) ->
-                                        updateInfo = info
-                                    else ->
-                                        Toast.makeText(context, Teks.sudahTerbaru, Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        },
-                        enabled = !memeriksaUpdate,
-                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
-                    ) {
-                        Text(if (memeriksaUpdate) Teks.sedangMemeriksa else Teks.cekPembaruan)
-                    }
-
-                    JudulBagianSetelan(Teks.dukungan)
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(10.dp))
-                            .clickable { showDonasi = true }
-                            .padding(vertical = 6.dp)
-                    ) {
-                        Icon(
-                            Icons.Filled.CardGiftcard,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Column(modifier = Modifier.weight(1f).padding(start = 12.dp, end = 8.dp)) {
-                            Text(Teks.donasi, fontSize = 14.5.sp, color = MaterialTheme.colorScheme.onSurface)
-                            Text(
-                                Teks.dukungQris,
-                                fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-
                     JudulBagianSetelan(Teks.tentang)
                     Text(
                         Teks.dibuatOleh,
@@ -2036,29 +1700,6 @@ fun HomeScreen() {
                         Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(10.dp))
-                            .clickable { showFeedback = true }
-                            .padding(vertical = 6.dp)
-                    ) {
-                        Icon(
-                            Icons.Filled.BugReport,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Column(modifier = Modifier.weight(1f).padding(start = 12.dp, end = 8.dp)) {
-                            Text(Teks.laporkanBugSaran, fontSize = 14.5.sp, color = MaterialTheme.colorScheme.onSurface)
-                            Text(
-                                Teks.laporkanSub,
-                                fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
 
                     Text(
                         "Musik v$installedName",
@@ -2070,72 +1711,6 @@ fun HomeScreen() {
         }
     }
 
-    // ----- dialog: laporkan bug & saran -----
-    if (showFeedback) {
-        var fbKategori by remember { mutableIntStateOf(0) }
-        var fbPesan by remember { mutableStateOf("") }
-        var fbKirim by remember { mutableStateOf(false) }
-        val fbScope = rememberCoroutineScope()
-        DialogMusik(
-            onDismissRequest = { showFeedback = false },
-            title = { Text(Teks.laporkanBugSaran) },
-            text = {
-                Column {
-                    listOf(Teks.bugKata, Teks.saranKata, Teks.lainnyaKata).forEachIndexed { i, label ->
-                        BarisPilihanFolder(
-                            terpilih = fbKategori == i,
-                            label = label,
-                            onClick = { fbKategori = i }
-                        )
-                    }
-                    OutlinedTextField(
-                        value = fbPesan,
-                        onValueChange = { if (it.length <= 2000) fbPesan = it },
-                        label = { Text(Teks.pesanKamu) },
-                        trailingIcon = {
-                            if (fbPesan.isNotEmpty()) {
-                                IconButton(onClick = { fbPesan = "" }) {
-                                    Icon(Icons.Filled.Close, contentDescription = null, modifier = Modifier.size(20.dp))
-                                }
-                            }
-                        },
-                        minLines = 3,
-                        maxLines = 6,
-                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
-                    )
-                    Text(
-                        Teks.infoLampiranOtomatis,
-                        fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 6.dp)
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    enabled = fbPesan.isNotBlank() && !fbKirim,
-                    onClick = {
-                        fbKirim = true
-                        fbScope.launch {
-                            val kategori = listOf("bug", "saran", "lainnya")[fbKategori]
-                            val perangkat = "${Build.MANUFACTURER} ${Build.MODEL} - Android ${Build.VERSION.RELEASE}"
-                            val ok = SupaClient.kirimFeedback(kategori, fbPesan.trim(), installedName, perangkat)
-                            fbKirim = false
-                            if (ok) {
-                                Toast.makeText(context, Teks.laporanTerkirim, Toast.LENGTH_LONG).show()
-                                showFeedback = false
-                            } else {
-                                Toast.makeText(context, Teks.laporanGagal, Toast.LENGTH_LONG).show()
-                            }
-                        }
-                    }
-                ) { Text(Teks.kirim) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showFeedback = false }) { Text(Teks.batal) }
-            }
-        )
-    }
-
     // ----- dialog: offline -----
     if (tampilOffline) {
         DialogMusik(
@@ -2144,102 +1719,6 @@ fun HomeScreen() {
             text = { Text(Teks.offlineIsi, fontSize = 14.sp) },
             confirmButton = {
                 TextButton(onClick = { tampilOffline = false }) { Text(Teks.mengerti) }
-            }
-        )
-    }
-
-    // ----- dialog: akun -----
-    if (showAccount) {
-        val sesiKini by SupaClient.session.collectAsState()
-        val statusSync by SyncManager.status.collectAsState()
-        val dlgScope = rememberCoroutineScope()
-        var sibukMasuk by remember { mutableStateOf(false) }
-        val sNow = sesiKini
-        DialogMusik(
-            onDismissRequest = { showAccount = false },
-            title = { Text(Teks.akun) },
-            text = {
-                Column {
-                    if (sNow == null) {
-                        Text(
-                            Teks.masukGooglePanjang,
-                            fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    } else {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (sNow.avatar.isNotEmpty()) {
-                                AsyncImage(
-                                    model = sNow.avatar,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(44.dp).clip(CircleShape)
-                                )
-                            } else {
-                                Icon(
-                                    Icons.Filled.AccountCircle,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(44.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            Spacer(Modifier.width(12.dp))
-                            Column {
-                                Text(
-                                    sNow.name.ifEmpty { Teks.pengguna },
-                                    fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
-                                    maxLines = 1, overflow = TextOverflow.Ellipsis
-                                )
-                                Text(
-                                    sNow.email,
-                                    fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1, overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-                        Spacer(Modifier.height(10.dp))
-                        Text(
-                            statusSync.ifEmpty { Teks.sinkronisasiAktif },
-                            fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                if (sNow == null) {
-                    Button(
-                        enabled = !sibukMasuk,
-                        onClick = {
-                            sibukMasuk = true
-                            dlgScope.launch {
-                                val err = SyncManager.masukDenganGoogle(context)
-                                sibukMasuk = false
-                                if (err != null) {
-                                    Toast.makeText(context, err, Toast.LENGTH_LONG).show()
-                                } else if (SupaClient.session.value != null) {
-                                    Toast.makeText(context, Teks.berhasilMasuk, Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        }
-                    ) { Text(if (sibukMasuk) Teks.memproses else Teks.masukDenganGoogle) }
-                } else {
-                    TextButton(
-                        onClick = { dlgScope.launch { SyncManager.sinkronSekarang() } }
-                    ) { Text(Teks.sinkronkan) }
-                }
-            },
-            dismissButton = {
-                Row {
-                    if (sNow != null) {
-                        TextButton(
-                            onClick = {
-                                dlgScope.launch {
-                                    SupaClient.signOut()
-                                    SyncManager.keluar()
-                                }
-                            }
-                        ) { Text(Teks.keluar) }
-                    }
-                    TextButton(onClick = { showAccount = false }) { Text(Teks.tutup) }
-                }
             }
         )
     }
@@ -2562,54 +2041,6 @@ fun HomeScreen() {
             },
             confirmButton = {
                 TextButton(onClick = { pickerTrack = null }) { Text(Teks.tutup) }
-            }
-        )
-    }
-
-    // ----- dialog: pembaruan tersedia -----
-    val upd = updateInfo
-    if (upd != null) {
-        DialogMusik(
-            onDismissRequest = { updateInfo = null },
-            title = { Text(Teks.pembaruanTersedia) },
-            text = {
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    Text(
-                        Teks.musikVersiTersedia(upd.versionName),
-                        fontSize = 15.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        Teks.versiKamu(installedName, upd.date, fmtSize(upd.size)),
-                        fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 6.dp)
-                    )
-                    if (upd.notes.isNotEmpty()) {
-                        Text(
-                            upd.notes,
-                            fontSize = 13.5.sp, color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(top = 10.dp)
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        if (!UpdateChecker.canInstall(context)) {
-                            Toast.makeText(context, Teks.izinkanInstall, Toast.LENGTH_LONG).show()
-                            UpdateChecker.openInstallSettings(context)
-                        } else {
-                            val idBaru = UpdateChecker.download(context, upd)
-                            updateDlId = idBaru
-                            prefsUmum.edit().putLong("update_dl_id", idBaru).apply()
-                            updateInfo = null
-                            Toast.makeText(context, Teks.pembaruanDiunduh, Toast.LENGTH_LONG).show()
-                        }
-                    }
-                ) { Text(Teks.unduh) }
-            },
-            dismissButton = {
-                TextButton(onClick = { updateInfo = null }) { Text(Teks.nanti) }
             }
         )
     }
@@ -3273,34 +2704,6 @@ fun FullPlayer(
     }
     val saranLirik = remember(track.id) { MusicApi.saranLirik(track) }
 
-    // keadaan alih aksara disimpan di sini, bukan di panel, biar
-    // baris lirik terkini di atas judul ikut berubah pas tombol
-    // di panel ditekan
-    var alihAktif by remember(lyrics) { mutableStateOf(false) }
-    var linesAlih by remember(lyrics) { mutableStateOf<List<String>?>(null) }
-    var alihLoading by remember(lyrics) { mutableStateOf(false) }
-    val sumberBaris = lyrics?.lines?.map { it.text } ?: lyrics?.plain?.split("\n") ?: emptyList()
-    fun aksaraAsing(c: Char): Boolean {
-        val k = c.code
-        return k in 0x3040..0x30FF || k in 0x4E00..0x9FFF || k in 0x0600..0x06FF ||
-            k in 0xAC00..0xD7A3 || k in 0x0400..0x04FF
-    }
-    val perluAlih = remember(lyrics) { sumberBaris.any { b -> b.any { c -> aksaraAsing(c) } } }
-    val labelAlih = if (sumberBaris.any { b -> b.any { c -> c.code in 0x3040..0x30FF || c.code in 0x4E00..0x9FFF } }) "Romaji" else "Latin"
-    LaunchedEffect(alihAktif, lyrics) {
-        if (alihAktif && linesAlih == null && sumberBaris.isNotEmpty()) {
-            alihLoading = true
-            linesAlih = MusicApi.transliterate(sumberBaris)
-            alihLoading = false
-        }
-    }
-    // setelan alih aksara otomatis: lagu beraksara asing langsung
-    // ditampilkan alihnya tanpa menunggu tombol di panel ditekan
-    LaunchedEffect(lyrics, perluAlih) {
-        if (SettingsStore.alihOtomatis.value && perluAlih && !alihAktif) {
-            alihAktif = true
-        }
-    }
     // baris yang lagi jalan menurut posisi lagu; sebelum baris
     // pertama mulai, belum ada yang ditampilkan
     val barisKini: String? = run {
@@ -3310,7 +2713,6 @@ fun FullPlayer(
         } else {
             val idx = ls.indexOfLast { it.timeSec * 1000 <= followPos }
             if (idx < 0) null
-            else if (alihAktif) linesAlih?.getOrNull(idx) ?: ls[idx].text
             else ls[idx].text
         }
     }
@@ -3490,12 +2892,6 @@ fun FullPlayer(
                         onDark = true,
                         positionMs = followPos,
                         onSeek = { sec -> PlayerManager.seekTo((sec * 1000).toLong()) },
-                        alihAktif = alihAktif,
-                        linesAlih = linesAlih,
-                        alihLoading = alihLoading,
-                        perluAlih = perluAlih,
-                        labelAlih = labelAlih,
-                        onToggleAlih = { alihAktif = !alihAktif },
                         saranJudul = saranLirik.first,
                         saranArtis = saranLirik.second,
                         durasiTrack = track.durationSec,
@@ -3841,12 +3237,6 @@ fun LyricsPanel(
     loading: Boolean,
     positionMs: Long,
     onSeek: (Double) -> Unit,
-    alihAktif: Boolean,
-    linesAlih: List<String>?,
-    alihLoading: Boolean,
-    perluAlih: Boolean,
-    labelAlih: String,
-    onToggleAlih: () -> Unit,
     saranJudul: String,
     saranArtis: String,
     durasiTrack: Int,
@@ -3875,31 +3265,6 @@ fun LyricsPanel(
     // mode mengganti lirik yang sudah kepasang (salah pasang
     // misalnya): panel beralih ke formulir pencarian kandidat
     var modeGanti by remember(lyrics) { mutableStateOf(false) }
-    // tombol alih aksara; keadaannya dipegang FullPlayer biar baris
-    // lirik terkini di atas judul ikut berubah
-    val tombolAlih: @Composable () -> Unit = {
-        if (perluAlih) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(if (onDark) Color.White.copy(alpha = 0.15f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
-                    .clickable { onToggleAlih() }
-                    .padding(horizontal = 10.dp, vertical = 4.dp)
-            ) {
-                if (alihLoading) {
-                    CircularProgressIndicator(color = teksUtama, modifier = Modifier.size(11.dp), strokeWidth = 1.5.dp)
-                    Spacer(Modifier.width(6.dp))
-                }
-                Text(
-                    if (alihAktif) Teks.asli else labelAlih,
-                    fontSize = 11.5.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = teksUtama
-                )
-            }
-        }
-    }
     // tombol masuk mode ganti lirik, tampil di kepala panel
     // selama ada lirik yang kepasang
     val tombolGanti: @Composable () -> Unit = {
@@ -4024,7 +3389,6 @@ fun LyricsPanel(
                         Text(srcLabel, fontSize = 12.sp, color = teksRedup, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                         tombolGanti()
                         Spacer(Modifier.width(6.dp))
-                        tombolAlih()
                     }
                     BoxWithConstraints(modifier = Modifier.weight(1f)) {
                         val padTengah = (maxHeight / 2 - 24.dp).coerceAtLeast(0.dp)
@@ -4035,7 +3399,7 @@ fun LyricsPanel(
                         ) {
                             itemsIndexed(lines) { i, line ->
                                 val active = i == activeIdx
-                                val teksBaris = if (alihAktif) linesAlih?.getOrNull(i) ?: line.text else line.text
+                                val teksBaris = line.text
                                 Text(
                                     teksBaris,
                                     fontSize = if (active) ukuranAktifLirik else ukuranPasifLirik,
@@ -4075,7 +3439,6 @@ fun LyricsPanel(
                         Text(Teks.lirikOleh(lyrics.source), fontSize = 12.sp, color = teksRedup, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                         tombolGanti()
                         Spacer(Modifier.width(6.dp))
-                        tombolAlih()
                     }
                     Box(
                         modifier = Modifier
@@ -4083,7 +3446,7 @@ fun LyricsPanel(
                             .verticalScroll(rememberScrollState())
                     ) {
                         Text(
-                            if (alihAktif) linesAlih?.joinToString("\n") ?: lyrics.plain ?: "" else lyrics.plain ?: "",
+                            lyrics.plain ?: "",
                             fontSize = 15.sp, color = teksUtama
                         )
                     }
