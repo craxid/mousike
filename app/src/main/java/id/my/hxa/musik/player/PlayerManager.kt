@@ -31,7 +31,7 @@ import org.json.JSONObject
 import java.io.File
 
 // Otak pemutar: pegang antrean (hasil pencarian), urus resolve URL audio
-// per lagu ke resa, lalu mainkan lewat ExoPlayer bersama.
+// per lagu, lalu mainkan lewat ExoPlayer bersama.
 //
 // Player dipegang langsung di sini, BUKAN lewat MediaController/SessionToken:
 // pencarian SessionToken lewat PackageManager gagal di sebagian ROM
@@ -257,8 +257,8 @@ object PlayerManager {
         audioDetail.value = null
 
         // berkas musik dari perangkat (tab Lokal): mainkan langsung
-        // dari URI MediaStore, tanpa resa, dan jangan dicatat ke
-        // riwayat online karena id "lokal:" tidak dikenal di sana
+        // dari URI MediaStore, dan jangan dicatat ke riwayat online
+        // karena id "lokal:" tidak dikenal di sana
         val uriLokal = localUris[track.id]
         if (uriLokal != null) {
             audioInfo.value = ResolvedAudio(
@@ -302,9 +302,8 @@ object PlayerManager {
                 val resolved = urlCache[track.id] ?: MusicApi.resolveAudio(track.id).also { urlCache[track.id] = it }
                 audioInfo.value = resolved
                 exoPlayer?.apply {
-                    // URL hasil resa diambil lewat proxy stream resa (keikat
-                    // IP server, langsung kena 403 di HP); hasil ekstrak
-                    // lokal diambil langsung. urlByte yang mutusin.
+                    // URL hasil ekstrak lokal diambil langsung.
+                    // urlByte yang mutusin alamat finalnya.
                     setMediaItem(mediaItemFor(track, Uri.parse(MusicApi.urlByte(resolved))))
                     prepare()
                     if (posisiAwal > 0) seekTo(posisiAwal)
