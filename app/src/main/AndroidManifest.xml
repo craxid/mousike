@@ -6,8 +6,6 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <!-- buat prompt install pas pembaruan dalam aplikasi selesai diunduh -->
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- cuma buat nyimpan unduhan ke folder publik di Android 9 ke bawah;
          Android 10+ nulisnya lewat MediaStore tanpa izin ini -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
@@ -42,19 +40,5 @@
                 <action android:name="android.media.session.MediaButtonReceiver" />
             </intent-filter>
         </service>
-        <!-- pesan push dari owner lewat FCM -->
-        <service
-            android:name=".data.LayananPesan"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.google.firebase.MESSAGING_EVENT" />
-            </intent-filter>
-        </service>
-        <meta-data
-            android:name="com.google.firebase.messaging.default_notification_icon"
-            android:resource="@mipmap/ic_launcher" />
-        <meta-data
-            android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="pengumuman_owner" />
     </application>
 </manifest>

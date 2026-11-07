@@ -60,8 +60,5 @@ class MusikBetaApp : Application() {
             CrashLog.saveSync(this, error)
             prev?.uncaughtException(thread, error)
         }
-        // saluran notif pengumuman owner + langganan topik FCM;
-        // di dalamnya sudah dibungkus Throwable, aman dipanggil
-        id.my.hxa.musik.data.LayananPesan.siapkan(this)
     }
 }

@@ -4,7 +4,6 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
-    id("com.google.gms.google-services")
 }
 
 android {
@@ -36,8 +35,7 @@ android {
                 keyPassword = props.getProperty("keyPassword")
             }
         }
-        // rilis final: keystore crax (keystore-final.properties,
-        // kata sandinya dari berkas kata sandi di folder signing)
+        // rilis final: keystore rilis (keystore-final.properties)
         create("final") {
             val props = Properties()
             val f = rootProject.file("keystore-final.properties")
@@ -94,20 +92,12 @@ dependencies {
     implementation("dev.chrisbanes.haze:haze:1.2.0")
     implementation("androidx.media3:media3-exoplayer:1.4.1")
     implementation("androidx.media3:media3-session:1.4.1")
-    // login Google tahap 5: Credential Manager + Google ID
+    // jalan-jalan isi folder musik lokal yang dipilih user
     implementation("androidx.documentfile:documentfile:1.0.1")
-    implementation("androidx.credentials:credentials:1.5.0")
-    implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
-    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
-    // gambar QR buat donasi QRIS (digambar lokal di HP)
-    implementation("com.google.zxing:core:3.5.3")
     // uji coba putar langsung dari HP: NewPipeExtractor tidak ada di
     // Maven Central (cuma JitPack), jadi dia + temannya disimpan
     // sebagai jar lokal di app/libs
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    // FCM: notifikasi pengumuman dari owner (topik "semua")
-    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
-    implementation("com.google.firebase:firebase-messaging")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 }

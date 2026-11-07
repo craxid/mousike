@@ -4,30 +4,23 @@
 
 Mousike adalah aplikasi pemutar musik Android yang ditulis dengan Kotlin, Jetpack Compose, dan Media3. Nama Mousike diambil dari kata Yunani kuno *mousikē*, seni para Muses, yang menjadi asal kata "musik" di banyak bahasa.
 
+Edisi sumber terbuka ini berdiri sendiri: tidak ada akun, tidak ada server backend khusus, dan tidak ada kunci layanan yang perlu diisi. Semua resolve audio dikerjakan langsung di perangkat.
+
 ## Fitur
 
 - Pencarian lagu yang mengutamakan lagu resmi, dengan hasil tanpa batas yang dimuat bertahap saat menggulir
-- Pemutaran streaming lewat instans Piped, dengan ekstraksi lokal di perangkat memakai NewPipeExtractor sebagai jalur utama
+- Pemutaran streaming dengan ekstraksi lokal di perangkat memakai NewPipeExtractor; pencarian lewat instans Piped publik
 - Perpustakaan lagu lokal di perangkat
-- Lirik dari LRCLIB, termasuk romaji untuk lagu Jepang
+- Lirik dari LRCLIB, dengan pencarian kandidat lirik secara manual
 - Unduh lagu dengan pilihan kualitas, lengkap dengan opsi menanam sampul dan lirik ke berkas audio
-- Masuk dengan Google dan sinkronisasi data lewat Supabase
-- Laporan bug dan saran dari dalam aplikasi
-- Notifikasi pengumuman lewat Firebase Cloud Messaging
-- Pemeriksaan pembaruan di dalam aplikasi
+- Ekspor dan impor library dalam berkas JSON
 - Dua bahasa antarmuka: Indonesia dan Inggris
 
 ## Membangun dari sumber
 
 Kebutuhan: JDK 17 dan Gradle 8.9 (atau Android Studio versi terbaru). Proyek ini tidak menyertakan Gradle Wrapper; hasilkan dengan perintah `gradle wrapper --gradle-version 8.9` atau buka langsung di Android Studio.
 
-Sebelum membangun, siapkan tiga hal berikut yang memang tidak disertakan di repo ini:
-
-1. Berkas `app/google-services.json` dari proyek Firebase milikmu sendiri. Nama paket aplikasinya adalah `id.my.hxa.musik`.
-2. Nilai layanan di `app/src/main/java/id/my/hxa/musik/data/Kunci.kt`. Berkas itu berisi contoh untuk alamat backend resa dan proyek Supabase; ganti dengan milikmu.
-3. Untuk build release, salin `keystore-final.properties.example` menjadi `keystore-final.properties` dan isi dengan keystore milikmu. Build debug berjalan tanpa berkas ini.
-
-Saluran pembaruan di dalam aplikasi membaca berkas JSON dari Google Drive. Tautan di `UpdateChecker.kt` menunjuk ke saluran pembaruan resmi Mousike; ganti dengan berkas milikmu bila kamu menerbitkan varian sendiri.
+Tidak ada berkas konfigurasi layanan yang perlu disiapkan. Untuk build debug, langsung jalankan `assembleDebug`. Untuk build release, salin `keystore-final.properties.example` menjadi `keystore-final.properties` dan isi dengan keystore milikmu.
 
 ## Lisensi
 
@@ -38,5 +31,5 @@ Lisensi ini mengikuti pustaka NewPipeExtractor yang dipakai untuk ekstraksi di p
 ## Kredit
 
 - [NewPipeExtractor](https://github.com/TeamNewPipe/NewPipeExtractor) untuk ekstraksi
-- [Piped](https://github.com/TeamPiped/Piped) untuk pencarian dan streaming
+- [Piped](https://github.com/TeamPiped/Piped) untuk pencarian
 - [LRCLIB](https://lrclib.net) untuk lirik
