@@ -583,7 +583,7 @@ private fun BarisPilihanFolder(
 // popup SEKALI tiap ganti versi (pengganti spanduk menetap
 // di bawah beranda), jadi isinya diganti tiap rilis.
 private const val CATATAN_RILIS_INI =
-    "Pencarian sekarang mengutamakan lagu resmi dan hasilnya tanpa batas, dimuat bertahap saat kamu menggulir."
+    "Musik kini menggunakan nama dan ikon baru yang lebih segar: Mousike."
 
 @Composable
 fun HomeScreen() {
@@ -1021,7 +1021,7 @@ fun HomeScreen() {
     ) {
         // header: judul + pill tombol cepat, sama kyk web
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Musik", fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, fontFamily = RobotoFamily, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+            Text("Mousike", fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, fontFamily = RobotoFamily, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
             Row(
                 modifier = Modifier
                     .clip(CircleShape)
@@ -1702,7 +1702,7 @@ fun HomeScreen() {
 
 
                     Text(
-                        "Musik v$installedName",
+                        "Mousike v$installedName",
                         fontSize = 12.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 14.dp, bottom = 20.dp)
                     )
