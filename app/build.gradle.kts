@@ -19,8 +19,8 @@ android {
         // dan WAJIB di atas 16: aplikasi web lama (paket sama)
         // berakhir di kode 16, kode yang lebih kecil ditolak
         // Android sebagai penurunan versi saat memasang
-        versionCode = 64
-        versionName = "1.2.0"
+        versionCode = 65
+        versionName = "1.3.0"
     }
 
     signingConfigs {

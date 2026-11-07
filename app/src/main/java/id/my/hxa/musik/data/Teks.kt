@@ -132,7 +132,7 @@ object Teks {
 
     val sinkron get() = p("Sinkron", "Sync")
 
-    fun baruDiMusik(v: String) = p("Baru di Musik v$v", "New in Musik v$v")
+    fun baruDiMusik(v: String) = p("Baru di Mousike v$v", "New in Mousike v$v")
 
     // ---- notifikasi ----
     val notifikasiBelumAktif get() = p("Notifikasi belum aktif", "Notifications are not enabled")
@@ -179,8 +179,8 @@ object Teks {
     )
     val bukaPengaturan get() = p("Buka Pengaturan", "Open Settings")
     val notifIsi get() = p(
-        "Lagu yang sedang diputar tidak akan muncul di panel cepat, layar kunci, dan kapsul dinamis selama notifikasi Musik belum diaktifkan. Aktifkan dari pengaturan aplikasi, cukup sekali.",
-        "The currently playing song will not appear in the quick panel, lock screen, and dynamic capsule while Musik notifications are not enabled. Enable them from the app settings, just once."
+        "Lagu yang sedang diputar tidak akan muncul di panel cepat, layar kunci, dan kapsul dinamis selama notifikasi Mousike belum diaktifkan. Aktifkan dari pengaturan aplikasi, cukup sekali.",
+        "The currently playing song will not appear in the quick panel, lock screen, and dynamic capsule while Mousike notifications are not enabled. Enable them from the app settings, just once."
     )
     val izinkanAksesMusik get() = p("Izinkan akses musik", "Allow music access")
     val izinMusikBelum get() = p("Izin musik belum diberikan, tab Lokal masih kosong.", "Music permission has not been granted, the Local tab is still empty.")
