@@ -81,26 +81,6 @@ object Teks {
     val namaPlaylist get() = p("Nama playlist", "Playlist name")
     val tambahKePlaylist get() = p("Tambah ke playlist", "Add to playlist")
 
-    // ---- donasi ----
-    val donasi get() = p("Donasi", "Donate")
-    val dukungQris get() = p("Dukung pengembangan Musik melalui QRIS.", "Support Musik development via QRIS.")
-    val qrisDonasiDesc get() = p("QRIS donasi", "Donation QRIS")
-    val qrisBelumDibuat get() = p(
-        "QRIS belum dibuat.\nPilih nominal terlebih dahulu di bawah, lalu tekan Buat QRIS.",
-        "The QRIS has not been created yet.\nChoose an amount below, then press Create QRIS."
-    )
-    val nominalOtomatis get() = p(
-        "Nominal akan terisi otomatis saat kamu memindai dengan e-wallet atau m-banking.",
-        "The amount is filled in automatically when you scan with an e-wallet or mobile banking."
-    )
-    val pilihNominal get() = p("Pilih nominal", "Choose amount")
-    val nominalLain get() = p("Nominal lain", "Other amount")
-    val buatQris get() = p("Buat QRIS", "Create QRIS")
-    val buatUlangQris get() = p("Buat Ulang QRIS", "Recreate QRIS")
-    val qrDibuatDiPerangkat get() = p(
-        "QR dibuat langsung di perangkat kamu, tidak melalui server. Terima kasih atas dukungannya.",
-        "The QR is generated directly on your device, not through a server. Thank you for your support."
-    )
     val tidakAdaAplikasiTelegram get() = p("Tidak ada aplikasi untuk membuka tautan Telegram.", "No app available to open the Telegram link.")
     val tidakAdaAplikasiGithub get() = p("Tidak ada aplikasi untuk membuka tautan GitHub.", "No app available to open the GitHub link.")
 
@@ -132,21 +112,11 @@ object Teks {
     val sumberLirik get() = p("Sumber lirik", "Lyrics source")
     val otomatisLrclib get() = p("Otomatis (LRCLIB)", "Automatic (LRCLIB)")
     val lrclibSaja get() = p("LRCLIB saja", "LRCLIB only")
-    val alihAksaraOtomatis get() = p("Alih aksara otomatis", "Automatic transliteration")
-    val alihAksaraSub get() = p(
-        "Lagu beraksara asing langsung ditampilkan dalam romaji atau latin.",
-        "Songs in foreign scripts are shown directly in romaji or Latin."
-    )
     val ukuranTeksLirik get() = p("Ukuran teks lirik", "Lyric text size")
     val kecil get() = p("Kecil", "Small")
     val sedang get() = p("Sedang", "Medium")
     val besar get() = p("Besar", "Large")
-    val sinkronDanData get() = p("Sinkron dan data", "Sync and data")
-    val sinkronHanyaWifi get() = p("Sinkron hanya saat Wi-Fi", "Sync only on Wi-Fi")
-    val sinkronWifiSub get() = p(
-        "Pengiriman ke cloud ditahan saat koneksi menggunakan data seluler.",
-        "Uploads to the cloud are held while the connection uses mobile data."
-    )
+    val data get() = p("Data", "Data")
     val eksporLibrary get() = p("Ekspor library", "Export library")
     val imporLibrary get() = p("Impor library", "Import library")
     val cacheGambar get() = p("Cache gambar sampul", "Cover image cache")
@@ -157,47 +127,11 @@ object Teks {
     val bahasaLabel get() = p("Bahasa", "Language")
     val bahasaIndonesia get() = p("Indonesia", "Indonesian")
     val bahasaInggris get() = p("Inggris", "English")
-    val cekPembaruanOtomatis get() = p("Cek pembaruan otomatis", "Automatic update checks")
-    val cekPembaruanSub get() = p(
-        "Memeriksa versi baru setiap kali aplikasi dibuka.",
-        "Check for a new version every time the app opens."
-    )
-    val cekPembaruan get() = p("Cek pembaruan", "Check for updates")
-    val sedangMemeriksa get() = p("Memeriksa…", "Checking…")
-    val sudahTerbaru get() = p("Kamu sudah memakai versi terbaru.", "You are already on the latest version.")
-    val gagalMemeriksa get() = p("Pemeriksaan gagal. Periksa koneksi internet kamu.", "The check failed. Please check your internet connection.")
-    val dukungan get() = p("Dukungan", "Support")
     val tentang get() = p("Tentang", "About")
     val dibuatOleh get() = p("Dibuat oleh CraXID Project", "Created by CraXID Project")
 
-    // ---- akun ----
-    val akun get() = p("Akun", "Account")
-    val masukGooglePanjang get() = p(
-        "Masuk dengan akun Google agar library kamu tersinkron ke cloud: Playlist, Disukai, Tidak Disukai, dan Riwayat. Datanya terhubung dengan versi web, jadi berganti perangkat atau memasang ulang tidak menghilangkan koleksimu.",
-        "Sign in with a Google account so your library syncs to the cloud: Playlists, Liked, Disliked, and History. The data is shared with the web version, so switching devices or reinstalling will not erase your collection."
-    )
-    val sinkronisasiAktif get() = p("Sinkronisasi aktif.", "Sync is active.")
-    val sinkronkan get() = p("Sinkronkan", "Sync now")
     val sinkron get() = p("Sinkron", "Sync")
-    val pengguna get() = p("Pengguna", "User")
-    val masukDenganGoogle get() = p("Masuk dengan Google", "Sign in with Google")
-    val keluar get() = p("Keluar", "Sign out")
 
-    // ---- pembaruan ----
-    val pembaruanTersedia get() = p("Pembaruan tersedia", "Update available")
-    fun musikVersiTersedia(v: String) = p("Musik v$v sudah tersedia.", "Musik v$v is available.")
-    fun versiKamu(inst: String, tgl: String, uk: String) = p(
-        "Versi kamu: v$inst\nTanggal rilis: $tgl\nUkuran: $uk",
-        "Your version: v$inst\nRelease date: $tgl\nSize: $uk"
-    )
-    val pembaruanDiunduh get() = p(
-        "Pembaruan sedang diunduh. Tunggu sampai selesai, installer akan muncul dengan sendirinya.",
-        "The update is being downloaded. Wait until it finishes, the installer will appear on its own."
-    )
-    val unduhanSelesaiInstaller get() = p(
-        "Unduhan selesai. Aktifkan izin pemasangan, lalu ketuk berkas Musik di folder Download.",
-        "Download finished. Allow the install permission, then tap the Musik file in the Download folder."
-    )
     fun baruDiMusik(v: String) = p("Baru di Musik v$v", "New in Musik v$v")
 
     // ---- notifikasi ----
@@ -258,10 +192,6 @@ object Teks {
     val libraryDiekspor get() = p("Library diekspor.", "Library exported.")
     val libraryDipulihkan get() = p("Library dipulihkan dari berkas.", "Library restored from file.")
     val cacheDibersihkan get() = p("Cache gambar dibersihkan.", "Image cache cleared.")
-    val izinkanInstall get() = p(
-        "Izinkan pemasangan dari aplikasi ini terlebih dahulu, lalu ketuk Unduh lagi.",
-        "Allow installs from this app first, then tap Download again."
-    )
     val judulYtBerbeda get() = p(
         "Judul dari YouTube kadang berbeda dari judul resmi lagunya. Coba cari sendiri dengan judul dan artis yang benar, lalu pilih hasil yang cocok.",
         "YouTube titles sometimes differ from the official song title. Try searching yourself with the correct title and artist, then pick the matching result."
@@ -282,45 +212,12 @@ object Teks {
     val lirikDariBerkasSiap get() = p("Lirik dari berkas siap ditanam.", "Lyrics from the file are ready to embed.")
     val lirikDariCariSiap get() = p("Lirik pilihan siap ditanam.", "The selected lyrics are ready to embed.")
     val berkasLirikTakTerbaca get() = p("Berkas lirik tidak bisa dibaca.", "The lyrics file could not be read.")
-    val laporkanBugSaran get() = p("Laporkan Bug & Saran", "Report a Bug or Suggestion")
-    val laporkanSub get() = p(
-        "Bug, saran, atau pesan lain untuk developer",
-        "Bugs, suggestions, or any other message for the developer"
-    )
-    val kategori get() = p("Kategori", "Category")
-    val bugKata get() = p("Bug", "Bug")
-    val saranKata get() = p("Saran", "Suggestion")
-    val lainnyaKata get() = p("Lainnya", "Other")
-    val pesanKamu get() = p("Pesan kamu", "Your message")
-    val infoLampiranOtomatis get() = p(
-        "Versi aplikasi dan model perangkat ikut terlampir otomatis.",
-        "The app version and device model are attached automatically."
-    )
-    val kirim get() = p("Kirim", "Send")
-    val laporanTerkirim get() = p("Laporan terkirim. Terima kasih!", "Report sent. Thank you!")
-    val laporanGagal get() = p(
-        "Laporan gagal terkirim. Periksa koneksi lalu coba lagi.",
-        "The report failed to send. Check your connection and try again."
-    )
     fun unduhanGagal(judul: String, msg: String) = p("Unduhan gagal ($judul): $msg", "Download failed ($judul): $msg")
-    val berhasilMasuk get() = p("Berhasil masuk, library disinkronkan.", "Signed in, library synced.")
     fun ditambahkanKe(judul: String, nama: String) = p("\"$judul\" ditambahkan ke $nama", "\"$judul\" was added to $nama")
     val semuaServerMati get() = p("semua server pencarian mati", "all search servers are down")
-    val klienIdBelum get() = p("Client ID belum dipasang di aplikasi.", "The Client ID has not been set in the app.")
-    val kredensialBukanGoogle get() = p("Kredensial yang dipilih bukan akun Google.", "The chosen credential is not a Google account.")
-    val tidakAdaAkunGoogle get() = p("Tidak ada akun Google yang dapat dipakai di perangkat ini.", "No Google account on this device can be used.")
-    fun gagalPemilihAkun(msg: String) = p("Gagal membuka pemilih akun Google: $msg", "Failed to open the Google account picker: $msg")
-    val menghubungkanSupabase get() = p("Menghubungkan ke Supabase…", "Connecting to Supabase…")
-    val supabaseMenolakToken get() = p("Supabase menolak token Google. Periksa kembali Client ID di Supabase Auth.", "Supabase rejected the Google token. Double-check the Client ID in Supabase Auth.")
-    val mengambilCloud get() = p("Mengambil data dari cloud…", "Fetching data from the cloud…")
-    val gagalAmbilCloud get() = p("Gagal mengambil data dari cloud.", "Failed to fetch data from the cloud.")
-    val cloudKosong get() = p("Cloud masih kosong, mengunggah library…", "The cloud is still empty, uploading the library…")
-    val sinkronDitahanWifi get() = p("Sinkron ditahan: menunggu Wi-Fi", "Sync held: waiting for Wi-Fi")
-    val gagalSinkron get() = p("Gagal menyinkronkan, dicoba lagi nanti.", "Sync failed, it will be retried later.")
-    val tersinkronPrefix get() = p("Tersinkron ", "Synced ")
     val cobaLagi get() = p("coba lagi", "try again")
     fun statusBerhasil(x: String) = p("berhasil ($x)", "succeeded ($x)")
-    fun statusGagal(x: String) = p("gagal ($x), server yang melayani", "failed ($x), the server served instead")
+    fun statusGagal(x: String) = p("gagal ($x)", "failed ($x)")
     val batasWaktu30 get() = p("lewat batas 30 detik", "over the 30 second limit")
     val izinDitolakPilihLain get() = p(
         "Izin penyimpanan ditolak. Pilih \"Folder lain\" pada jendela unduh agar tetap dapat mengunduh.",

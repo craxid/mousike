@@ -23,12 +23,7 @@ object SettingsStore {
 
     // lirik
     val sumberLirik = MutableStateFlow(0) // 0 otomatis, 1 lrclib saja
-    val alihOtomatis = MutableStateFlow(false)
     val ukuranLirik = MutableStateFlow(1) // 0 kecil, 1 sedang, 2 besar
-
-    // data dan umum
-    val sinkronWifi = MutableStateFlow(false)
-    val cekUpdate = MutableStateFlow(true)
 
     // bahasa antarmuka: 0 Indonesia, 1 Inggris
     val bahasa = MutableStateFlow(0)
@@ -45,10 +40,7 @@ object SettingsStore {
         formatUnduh.value = p.getInt("set_format_unduh", 0)
         unduhWifi.value = p.getBoolean("set_unduh_wifi", false)
         sumberLirik.value = p.getInt("set_sumber_lirik", 0)
-        alihOtomatis.value = p.getBoolean("set_alih_otomatis", false)
         ukuranLirik.value = p.getInt("set_ukuran_lirik", 1)
-        sinkronWifi.value = p.getBoolean("set_sinkron_wifi", false)
-        cekUpdate.value = p.getBoolean("set_cek_update", true)
         bahasa.value = p.getInt("set_bahasa", 0)
         Teks.atur(bahasa.value == 1)
     }
@@ -91,24 +83,9 @@ object SettingsStore {
         simpanInt("set_sumber_lirik", v)
     }
 
-    fun setAlihOtomatis(v: Boolean) {
-        alihOtomatis.value = v
-        simpanBool("set_alih_otomatis", v)
-    }
-
     fun setUkuranLirik(v: Int) {
         ukuranLirik.value = v
         simpanInt("set_ukuran_lirik", v)
-    }
-
-    fun setSinkronWifi(v: Boolean) {
-        sinkronWifi.value = v
-        simpanBool("set_sinkron_wifi", v)
-    }
-
-    fun setCekUpdate(v: Boolean) {
-        cekUpdate.value = v
-        simpanBool("set_cek_update", v)
     }
 
     fun setBahasa(v: Int) {

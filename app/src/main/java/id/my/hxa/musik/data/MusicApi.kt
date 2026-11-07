@@ -18,7 +18,7 @@ data class Track(val id: String, val title: String, val author: String, val dura
     val thumbHdUrl: String get() = "https://i.ytimg.com/vi/$id/maxresdefault.jpg"
 }
 
-// Audio hasil resolve dari resa, plus info teknis buat ditampilin di full player.
+// Audio hasil resolve, plus info teknis buat ditampilin di full player.
 data class ResolvedAudio(
     val url: String,
     val codec: String,
@@ -49,25 +49,14 @@ data class LirikKandidat(
     val durasiSec: Int
 )
 
-// Lapisan data: pencarian via instance Piped publik (sama kayak versi web),
-// audio via API resa sendiri di api.myl.pp.ua.
+// Lapisan data: pencarian via instance Piped publik, audio
+// diekstrak langsung di perangkat.
 object MusicApi {
 
-    private val RESA_AUDIO get() = Kunci.RESA_AUDIO
-    private val RESA_STREAM get() = Kunci.RESA_STREAM
-
-    // URL googlevideo hasil resolve keikat IP server resa yang me-resolve,
-    // jadi HP kena 403 kalau mengambilnya langsung (terbukti: lagu tidak
-    // bisa diputar sama sekali). Semua pengambilan byte (putar + unduh)
-    // dibungkus proxy stream resa biar keluarnya dari IP server.
-    fun proxiedUrl(directUrl: String): String =
-        RESA_STREAM + "?u=" + URLEncoder.encode(directUrl, "UTF-8")
-
-    // URL yang siap diambil byte-nya buat hasil resolve ini: hasil resa
-    // wajib lewat proxy stream (keikat IP server), hasil ekstrak lokal
-    // keikat IP HP sendiri jadi bisa langsung.
-    fun urlByte(r: ResolvedAudio): String =
-        if (r.source == "Lokal") r.url else proxiedUrl(r.url)
+    // URL yang siap diambil byte-nya buat hasil resolve ini. Semua
+    // hasil resolve diekstrak lokal di perangkat, jadi alamatnya
+    // bisa langsung diambil.
+    fun urlByte(r: ResolvedAudio): String = r.url
 
     // urutan bisa berubah: instance yang terakhir berhasil dinaikkan ke depan
     private val piped = mutableListOf(
@@ -291,10 +280,8 @@ object MusicApi {
         val kualitas = kualitasOverride ?: SettingsStore.kualitasAudio.value
         val kunciCache = "$videoId|$kualitas"
         synchronized(audioCache) { audioCache[kunciCache] }?.let { return@withContext it }
-        // jalur utama sejak v1.0.13: ambil stream langsung dari HP
-        // (keputusan user pas uji coba v1.0.11-1.0.12 berhasil). Berlaku
-        // buat putar DAN unduhan. Gagal atau kelamaan langsung jatuh ke
-        // jalur resa di bawah, nggak usah ngotot.
+        // ambil stream langsung dari HP (jalur satu-satunya sejak
+        // v1.0.13). Berlaku buat putar DAN unduhan.
         // Tangkapnya Throwable, BUKAN Exception: galat kelas hilang
         // (NoClassDefFoundError) itu Error, lolos dari catch Exception
         // dan sempat bikin aplikasi tertutup sendiri di v1.0.11.
@@ -311,54 +298,7 @@ object MusicApi {
             return@withContext lokal
         }
         statusLokal.value = Teks.statusGagal(gagalLokal ?: Teks.batasWaktu30)
-        val watch = URLEncoder.encode("https://www.youtube.com/watch?v=$videoId", "UTF-8")
-        val d = getJson("$RESA_AUDIO?id=$videoId&url=$watch", 60_000)
-        val formats = d.optJSONArray("formats")
-            ?: throw IllegalStateException(Teks.responsAudioTidakDikenal)
-
-        // port dari pickResaAudio versi web (kualitas auto):
-        // utamakan format audio-only, m4a didahulukan, lalu berkas paling kecil
-        data class Fmt(val url: String, val ext: String, val codec: String, val abr: Double, val asr: Int, val size: Long, val audioOnly: Boolean)
-        val all = ArrayList<Fmt>()
-        for (i in 0 until formats.length()) {
-            val f = formats.optJSONObject(i) ?: continue
-            val url = f.optString("url")
-            if (url.isEmpty()) continue
-            all.add(
-                Fmt(
-                    url = url,
-                    ext = f.optString("ext"),
-                    codec = f.optString("acodec"),
-                    abr = f.optDouble("abr", 0.0),
-                    asr = f.optInt("asr", 0),
-                    size = f.optLong("filesize", Long.MAX_VALUE),
-                    audioOnly = f.optString("resolution").contains("audio only", ignoreCase = true)
-                )
-            )
-        }
-        val pool = all.filter { it.audioOnly }.ifEmpty { all }
-        // pilihan kualitas dari Pengaturan: hemat ambil berkas terkecil,
-        // tertinggi ambil bitrate terbesar (m4a tetap didahulukan pas seri),
-        // otomatis ngikutin aturan lama (m4a dulu, lalu paling kecil)
-        val picked = when (kualitas) {
-            1 -> pool.minByOrNull { it.size }
-            2 -> pool.sortedWith(
-                compareBy<Fmt> { if (it.ext.equals("m4a", ignoreCase = true)) 0 else 1 }
-                    .thenByDescending { it.abr }
-            ).firstOrNull()
-            else -> pool.sortedWith(
-                compareBy<Fmt> { if (it.ext.equals("m4a", ignoreCase = true)) 0 else 1 }.thenBy { it.size }
-            ).firstOrNull()
-        } ?: throw IllegalStateException(Teks.tidakAdaFormatAudio)
-        val resolved = ResolvedAudio(
-            url = picked.url,
-            codec = picked.codec.ifEmpty { picked.ext },
-            bitrateKbps = picked.abr.toInt(),
-            sampleRate = picked.asr,
-            ext = picked.ext.lowercase().ifEmpty { "m4a" }
-        )
-        synchronized(audioCache) { audioCache[kunciCache] = resolved }
-        resolved
+        throw IllegalStateException(gagalLokal ?: Teks.batasWaktu30)
     }
 
 
@@ -495,7 +435,7 @@ object MusicApi {
     // ----- lirik: LRCLIB utama, cadangan pencarian LRCLIB.
     // Logikanya port dari versi web (cleanTitle, splitArtistTitle, parseLRC).
 
-    private const val LRCLIB_UA = "Musik/1.0 (https://hxa.my.id/musik/)"
+    private const val LRCLIB_UA = "Musik/1.0"
     private val lyricsCache = HashMap<String, Lyrics?>()
 
     private fun cleanTitle(t: String): String {
@@ -538,43 +478,6 @@ object MusicApi {
         return out
     }
 
-    private fun httpPostJson(url: String, body: String, timeoutMs: Int): String {
-        val conn = URL(url).openConnection() as HttpURLConnection
-        conn.connectTimeout = timeoutMs
-        conn.readTimeout = timeoutMs
-        conn.requestMethod = "POST"
-        conn.doOutput = true
-        conn.setRequestProperty("Content-Type", "application/json")
-        conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android) Musik")
-        conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
-        if (conn.responseCode !in 200..299) {
-            conn.disconnect()
-            throw Exception("HTTP " + conn.responseCode)
-        }
-        val teks = conn.inputStream.bufferedReader().use { it.readText() }
-        conn.disconnect()
-        return teks
-    }
-
-    // Alih aksara lirik (Jepang ke romaji, Arab/Korea/Kiril ke latin)
-    // dihitung di resa: kanji butuh kamus bacaan yang terlalu besar
-    // buat ditanam di aplikasi. Gagal? Balikin baris aslinya saja.
-    suspend fun transliterate(lines: List<String>): List<String> = withContext(Dispatchers.IO) {
-        try {
-            val body = JSONObject().apply {
-                put("lines", JSONArray(lines))
-            }.toString()
-            val teks = httpPostJson(Kunci.RESA_TRANSLIT, body, 25_000)
-            val arr = JSONObject(teks).getJSONArray("lines")
-            if (arr.length() == lines.size) {
-                List(arr.length()) { arr.getString(it) }
-            } else {
-                lines
-            }
-        } catch (e: Exception) {
-            lines
-        }
-    }
 
     private class LrcNotFound : Exception()
 

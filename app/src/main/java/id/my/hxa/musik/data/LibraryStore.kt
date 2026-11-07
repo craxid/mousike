@@ -128,21 +128,6 @@ object LibraryStore {
         save()
     }
 
-    // pasang hasil gabungan dari cloud (dipakai SyncManager sesudah
-    // menarik data); isinya sudah final, tinggal ganti + simpan
-    fun applySynced(
-        historyBaru: List<Track>,
-        likesBaru: List<Track>,
-        dislikedBaru: List<Track>,
-        playlistsBaru: List<Playlist>
-    ) {
-        history.value = historyBaru.take(MAX_HISTORY)
-        likes.value = likesBaru
-        disliked.value = dislikedBaru
-        playlists.value = playlistsBaru
-        save()
-    }
-
     // ----- simpan & muat -----
 
     private fun trackToJson(t: Track): JSONObject = JSONObject()

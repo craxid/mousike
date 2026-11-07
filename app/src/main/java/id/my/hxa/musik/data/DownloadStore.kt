@@ -36,9 +36,9 @@ data class OpsiUnduh(
 )
 
 // Unduhan lagu: file diambil langsung dari URL audio yang sama dengan
-// yang dipakai memutar lagu (hasil resolve resa, sudah dicache MusicApi),
-// jadi server tidak perlu mengunduh ulang seperti endpoint yt-download
-// lama. Hasilnya disimpan ke folder yang gampang ditemukan orang awam:
+// yang dipakai memutar lagu (sudah dicache MusicApi), jadi tidak ada
+// pengunduhan ulang di tempat lain. Hasilnya disimpan ke folder yang
+// gampang ditemukan orang awam:
 // folder Download atau Music bawaan HP, atau folder pilihan user sendiri.
 // Registry-nya satu berkas JSON: metadata lagu + lokasi file (URI/path).
 object DownloadStore {
@@ -183,9 +183,8 @@ object DownloadStore {
         var attempt = 0
         while (true) {
             try {
-                // urlByte yang mutusin: hasil lokal diambil langsung,
-                // hasil resa lewat proxy stream (URL googlevideo server
-                // keikat IP server, langsung kena 403 di HP)
+                // URL hasil ekstrak lokal keikat IP HP ini, jadi
+                // bisa diambil langsung
                 streamToFile(MusicApi.urlByte(resolved), tmp, track.id)
                 break
             } catch (e: Exception) {

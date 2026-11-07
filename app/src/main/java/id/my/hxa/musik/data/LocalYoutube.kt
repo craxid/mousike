@@ -55,10 +55,9 @@ private class OkDownloader : Downloader() {
     }
 }
 
-// Ekstrak stream audio langsung dari YouTube pakai IP HP ini sendiri,
-// tanpa mampir server resa. Ini jalur utama sejak v1.0.13 (dulu
-// eksperimen bersakelar di v1.0.11); kalau gagal, pemanggil yang
-// jatuhin ke jalur server biasa.
+// Ekstrak stream audio langsung dari YouTube pakai IP HP ini sendiri.
+// Ini jalur resolve satu-satunya sejak v1.0.13 (dulu eksperimen
+// bersakelar di v1.0.11).
 object LocalYoutube {
 
     @Volatile
@@ -83,7 +82,7 @@ object LocalYoutube {
         val streams = extractor.audioStreams.filter { it.content.startsWith("http") }
         if (streams.isEmpty()) throw IllegalStateException("stream audio lokal kosong")
 
-        // pilihan format dicerminkan dari jalur resa: m4a didahulukan,
+        // pilihan format: m4a didahulukan,
         // hemat ambil bitrate terkecil, tertinggi ambil bitrate terbesar
         val m4aDulu = compareBy<AudioStream> {
             if (it.format?.suffix.equals("m4a", ignoreCase = true)) 0 else 1
@@ -97,7 +96,7 @@ object LocalYoutube {
         val ext = picked.format?.suffix?.lowercase()?.ifEmpty { "m4a" } ?: "m4a"
         ResolvedAudio(
             // URL hasil ekstrak lokal keikat IP HP ini, jadi bisa
-            // diambil langsung (beda sama hasil resa yang wajib proxy)
+            // diambil langsung
             url = picked.content,
             codec = when (ext) {
                 "m4a" -> "mp4a"
