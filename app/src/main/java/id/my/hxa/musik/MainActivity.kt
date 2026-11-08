@@ -583,7 +583,7 @@ private fun BarisPilihanFolder(
 // popup SEKALI tiap ganti versi (pengganti spanduk menetap
 // di bawah beranda), jadi isinya diganti tiap rilis.
 private const val CATATAN_RILIS_INI =
-    "Musik kini menggunakan nama dan ikon baru yang lebih segar: Mousike."
+    "Minor bug fixes."
 
 @Composable
 fun HomeScreen() {
