@@ -1,6 +1,18 @@
-# Mousike
+<p align="center">
+  <img src="icon.png" width="120" alt="Ikon Mousike" />
+</p>
 
-![Ikon Mousike](icon.png)
+<h1 align="center">Mousike</h1>
+
+<p align="center">
+  <a href="https://github.com/craxid/mousike/releases/latest"><img src="https://img.shields.io/github/v/release/craxid/mousike" alt="Rilis terbaru" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/craxid/mousike" alt="Lisensi" /></a>
+  <a href="https://github.com/craxid/mousike/stargazers"><img src="https://img.shields.io/github/stars/craxid/mousike" alt="Bintang" /></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/craxid/mousike/releases/latest"><b>⬇️ Unduh APK Terbaru</b></a>
+</p>
 
 Mousike adalah aplikasi pemutar musik Android yang ditulis dengan Kotlin, Jetpack Compose, dan Media3. Nama Mousike diambil dari kata Yunani kuno *mousikē*, seni para Muses, yang menjadi asal kata "musik" di banyak bahasa.
 
